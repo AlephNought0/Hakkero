@@ -1,0 +1,20 @@
+[
+{
+  "directory": "/home/Aperius/Hakkero/build",
+  "command": "/nix/store/0fsnicvfpf55nkza12cjnad0w84d6ba7-gcc-wrapper-14.2.1.20250322/bin/g++ -DHakkero_EXPORTS -I/home/Aperius/Hakkero -I/home/Aperius/Hakkero/build -I/home/Aperius/Hakkero/core -I/home/Aperius/Hakkero/graphics/Vulkan -isystem /nix/store/0619nymlnbhax0hqjdxl33gxyfvqs9hr-openal-soft-1.24.2/include/AL -std=gnu++23 -fPIC -Wall -Wextra -Werror -o CMakeFiles/Hakkero.dir/core/logger.cpp.o -c /home/Aperius/Hakkero/core/logger.cpp",
+  "file": "/home/Aperius/Hakkero/core/logger.cpp",
+  "output": "CMakeFiles/Hakkero.dir/core/logger.cpp.o"
+},
+{
+  "directory": "/home/Aperius/Hakkero/build",
+  "command": "/nix/store/0fsnicvfpf55nkza12cjnad0w84d6ba7-gcc-wrapper-14.2.1.20250322/bin/g++ -DHakkero_EXPORTS -I/home/Aperius/Hakkero -I/home/Aperius/Hakkero/build -I/home/Aperius/Hakkero/core -I/home/Aperius/Hakkero/graphics/Vulkan -isystem /nix/store/0619nymlnbhax0hqjdxl33gxyfvqs9hr-openal-soft-1.24.2/include/AL -std=gnu++23 -fPIC -Wall -Wextra -Werror -o CMakeFiles/Hakkero.dir/core/time_utils.cpp.o -c /home/Aperius/Hakkero/core/time_utils.cpp",
+  "file": "/home/Aperius/Hakkero/core/time_utils.cpp",
+  "output": "CMakeFiles/Hakkero.dir/core/time_utils.cpp.o"
+},
+{
+  "directory": "/home/Aperius/Hakkero/build",
+  "command": "/nix/store/0fsnicvfpf55nkza12cjnad0w84d6ba7-gcc-wrapper-14.2.1.20250322/bin/g++ -I/home/Aperius/Hakkero -I/home/Aperius/Hakkero/build -I/home/Aperius/Hakkero/core -std=gnu++23 -o samples/CMakeFiles/Meow.dir/main.cpp.o -c /home/Aperius/Hakkero/samples/main.cpp",
+  "file": "/home/Aperius/Hakkero/samples/main.cpp",
+  "output": "samples/CMakeFiles/Meow.dir/main.cpp.o"
+}
+]
