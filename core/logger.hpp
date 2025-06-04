@@ -1,8 +1,13 @@
 #pragma once
 
 #include <atomic>
+#include <condition_variable>
+#include <fstream>
+#include <memory>
 #include <mutex>
+#include <queue>
 #include <string>
+#include <vector>
 
 enum class LogLevel { INFO, WARN, ERROR, DEBUG };
 
@@ -40,21 +45,42 @@ constexpr std::string_view logLevelToColor(LogLevel level) noexcept {
 #define LOG_WARN(msg) Logger::log(LogLevel::WARN, msg)
 #define LOG_ERROR(msg) Logger::log(LogLevel::ERROR, msg)
 #define LOG_DEBUG(msg) Logger::log(LogLevel::DEBUG, msg)
-#define LOG_TRACE(msg) Logger::log(LogLevel::TRACE, msg)
 
 class Logger {
 public:
+  struct LogMessage {
+    LogLevel level;
+    std::string message;
+    std::string timestamp;
+  };
+
   static void init();
+  static void shutdown();
   static void log(LogLevel level, const std::string &message);
 
 private:
-  static void fileLog(LogLevel level, const std::string &message);
+  static void loggingThreadWorker();
+  static void processBatch(const std::vector<LogMessage> &batch);
 
-  static std::string currentFile_;
-  static std::mutex consoleMutex_;
+  // Queue management
+  static std::mutex queueMutex_;
+  static std::condition_variable queueCV_;
+  static std::queue<LogMessage> messageQueue_;
+  static std::atomic<bool> shutdownRequested_;
+
+  // File management
   static std::mutex fileMutex_;
+  static std::string fileName_;
+  static std::unique_ptr<std::ofstream> logFile_;
+
+  // Console logging
+  static std::mutex consoleMutex_;
+
+  // Thread management
+  static std::thread loggingThread_;
   static std::atomic<bool> initialized_;
 
-  // Per-thread file streams (avoid contention)
-  static thread_local std::ofstream logFile_;
+  // Configuration
+  static constexpr size_t MAX_BATCH_SIZE = 100;   // Messages per batch
+  static constexpr size_t MAX_QUEUE_SIZE = 10000; // Prevent memory exhaustion
 };

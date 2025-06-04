@@ -1,9 +1,10 @@
 #include <logger.hpp>
 
 int main(void) {
-  LOG_DEBUG("Ohio boss summoned");
-  LOG_INFO("Meow");
-  LOG_WARN("Woof");
-  LOG_ERROR("Grrrr");
-  LOG_DEBUG("Sure");
+  for (int i = 0; i < 10000; ++i) {
+    LOG_INFO("Massive meow test");
+    LOG_ERROR("What");
+  }
+  Logger::shutdown();
+  return 0;
 }

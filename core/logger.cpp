@@ -1,81 +1,166 @@
 #include "logger.hpp"
-#include "time_utils.hpp"
+#include <time_utils.hpp>
 
 #include <filesystem>
-#include <fstream>
 #include <iostream>
-#include <unistd.h>
 
-std::string Logger::currentFile_;
-std::mutex Logger::consoleMutex_;
+// Static member initialization
+std::mutex Logger::queueMutex_;
+std::condition_variable Logger::queueCV_;
+std::queue<Logger::LogMessage> Logger::messageQueue_;
+std::atomic<bool> Logger::shutdownRequested_{false};
+
 std::mutex Logger::fileMutex_;
+std::string Logger::fileName_;
+std::unique_ptr<std::ofstream> Logger::logFile_;
+
+std::mutex Logger::consoleMutex_;
+std::thread Logger::loggingThread_;
 std::atomic<bool> Logger::initialized_{false};
 
-void Logger::init() {
-  std::lock_guard<std::mutex> lock(fileMutex_);
-  if (initialized_)
-    return;
+constexpr size_t Logger::MAX_BATCH_SIZE;
+constexpr size_t Logger::MAX_QUEUE_SIZE;
 
-  auto dir_status = std::filesystem::create_directory("logs");
-  if (!dir_status && !std::filesystem::exists("logs")) {
-    throw std::runtime_error("Failed to create logs directory");
+void Logger::init() {
+  if (initialized_.exchange(true)) {
+    return;
   }
 
-  // Each thread will open its own copy when first logging
-  initialized_ = true;
+  auto timeObj = TimeUtils::captureCurrentTime();
+  std::string date = TimeUtils::formatAsDate(timeObj);
+
+  if (!std::filesystem::create_directory("logs") &&
+      !std::filesystem::exists("logs"))
+    throw std::runtime_error("Failed to create logs directory");
+
+  std::string date_dir = "logs/" + date;
+  if (!std::filesystem::exists(date_dir) &&
+      !std::filesystem::create_directory(date_dir))
+    throw std::runtime_error("Failed to create directory: " + date_dir);
+
+  int count = 0;
+  try {
+    count = std::distance(std::filesystem::directory_iterator(date_dir),
+                          std::filesystem::directory_iterator{});
+  } catch (...) {
+    throw std::runtime_error("Failed to count log files");
+  }
+
+  fileName_ = std::format("logs/{}/{}.log", date, count);
+
+  // Start the logging thread
+  loggingThread_ = std::thread(&Logger::loggingThreadWorker);
+}
+
+void Logger::shutdown() {
+  if (!initialized_)
+    return;
+
+  shutdownRequested_ = true;
+  queueCV_.notify_all();
+
+  if (loggingThread_.joinable()) {
+    loggingThread_.join();
+  }
+
+  // Final flush
+  std::lock_guard<std::mutex> fileLock(fileMutex_);
+  if (logFile_) {
+    logFile_->flush();
+    logFile_->close();
+  }
+
+  initialized_ = false;
 }
 
 void Logger::log(LogLevel level, const std::string &message) {
-  // Thread-safe lazy init
-  if (!initialized_.load(std::memory_order_acquire))
+  if (!initialized_) {
     init();
+  }
 
+  // Console output
   {
-    std::lock_guard<std::mutex> lock(consoleMutex_);
+    std::lock_guard<std::mutex> consoleLock(consoleMutex_);
     if (level <= LogLevel::ERROR) {
       std::cerr << logLevelToColor(level) << "[" << logLevelToString(level)
-                << "]: "
-                << "\033[0m" << message << '\n';
+                << "]"
+                << "\033[0m: " << message << '\n';
     }
   }
 
-  fileLog(level, message);
+  // Queue the message for file writing
+  LogMessage logMsg{
+      level, message,
+      TimeUtils::formatAsHourMinSec(TimeUtils::captureCurrentTime())};
+
+  {
+    std::unique_lock<std::mutex> queueLock(queueMutex_);
+
+    // Prevent queue from growing indefinitely
+    if (messageQueue_.size() >= MAX_QUEUE_SIZE)
+      queueCV_.wait(queueLock,
+                    [] { return messageQueue_.size() < MAX_QUEUE_SIZE; });
+
+    messageQueue_.push(std::move(logMsg));
+  }
+
+  queueCV_.notify_one();
 }
 
-void Logger::fileLog(LogLevel level, const std::string &message) {
-  thread_local std::ofstream logFile_;
-  thread_local std::string filename;
-  thread_local std::string current_date;
-  thread_local std::string buffer;
+void Logger::loggingThreadWorker() {
+  std::vector<LogMessage> batch;
+  batch.reserve(MAX_BATCH_SIZE);
 
-  auto timeObj = TimeUtils::captureCurrentTime();
-  std::string new_date = TimeUtils::formatAsDate(timeObj);
+  while (!shutdownRequested_ || !messageQueue_.empty()) {
+    // Wait for messages or shutdown
+    {
+      std::unique_lock<std::mutex> lock(queueMutex_);
+      queueCV_.wait(
+          lock, [] { return !messageQueue_.empty() || shutdownRequested_; });
+    }
 
-  if (filename.empty() || current_date != new_date) {
-    current_date = new_date;
-    filename = "logs/" + current_date + ".log";
-    logFile_.open(filename, std::ios::app);
+    // Process messages in batches
+    while (true) {
+      // Grab a batch of messages
+      {
+        std::lock_guard<std::mutex> lock(queueMutex_);
+        while (!messageQueue_.empty() && batch.size() < MAX_BATCH_SIZE) {
+          batch.push_back(std::move(messageQueue_.front()));
+          messageQueue_.pop();
+        }
+      }
 
-    if (!logFile_.is_open()) {
-      throw std::runtime_error("Failed to open log file: " + filename);
+      if (batch.empty())
+        break;
+
+      // Process the batch
+      processBatch(batch);
+      batch.clear();
+    }
+  }
+}
+
+void Logger::processBatch(const std::vector<LogMessage> &batch) {
+  std::lock_guard<std::mutex> fileLock(fileMutex_);
+
+  // Lazy file opening
+  if (!logFile_) {
+    logFile_ = std::make_unique<std::ofstream>(fileName_, std::ios::app);
+    if (!logFile_->is_open()) {
+      throw std::runtime_error("Failed to open log file: " + fileName_);
     }
   }
 
-  buffer.clear();
-  buffer.reserve(50 + message.size());
-  buffer.append("[")
-      .append(TimeUtils::formatAsHourMinSec(TimeUtils::captureCurrentTime()))
-      .append("] [")
-      .append(logLevelToString(level))
-      .append("]: ")
-      .append(message)
-      .append("\n");
+  // Write the batch
+  for (const auto &msg : batch) {
+    *logFile_ << "[" << msg.timestamp << "] [" << logLevelToString(msg.level)
+              << "]: " << msg.message << "\n";
+  }
 
-  // Synchronized file write
-  {
-    std::lock_guard<std::mutex> lock(fileMutex_);
-    logFile_ << buffer;
-    if (level >= LogLevel::WARN)
-      logFile_.flush();
+  // Flush if there are any error messages
+  if (std::any_of(batch.begin(), batch.end(), [](const LogMessage &msg) {
+        return msg.level == LogLevel::ERROR;
+      })) {
+    logFile_->flush();
   }
 }
