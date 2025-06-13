@@ -23,6 +23,7 @@ target_include_directories(Hakkero PUBLIC
 
 target_include_directories(Hakkero PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/platform/window/glfw
   ${CMAKE_CURRENT_SOURCE_DIR}/core
 )
 
@@ -30,11 +31,11 @@ target_include_directories(Hakkero PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/graphics/Vulkan
 )
 
-find_package(glfw3 REQUIRED)
+find_package(glfw3 3.4 REQUIRED)
 find_package(Vulkan REQUIRED COMPONENTS glslc)
 find_package(OpenAL REQUIRED)
 
-target_link_libraries(Hakkero PRIVATE
+target_link_libraries(Hakkero
   glfw
   Vulkan::Vulkan
   OpenAL::OpenAL

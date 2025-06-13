@@ -1,4 +1,3 @@
-# flake.nix (in your repo root)
 {
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 

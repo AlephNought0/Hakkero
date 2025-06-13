@@ -59,9 +59,8 @@ void Logger::shutdown() {
   shutdownRequested_ = true;
   queueCV_.notify_all();
 
-  if (loggingThread_.joinable()) {
+  if (loggingThread_.joinable())
     loggingThread_.join();
-  }
 
   // Final flush
   std::lock_guard<std::mutex> fileLock(fileMutex_);
