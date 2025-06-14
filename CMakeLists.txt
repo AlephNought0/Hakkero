@@ -9,6 +9,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(Hakkero SHARED
     core/logger.cpp
     core/time_utils.cpp
+    core/vulkan/vulkan_instance.cpp
+    core/vulkan/vulkan_utils.cpp
 )
 
 include(GenerateExportHeader)
@@ -25,10 +27,7 @@ target_include_directories(Hakkero PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/platform/window/glfw
   ${CMAKE_CURRENT_SOURCE_DIR}/core
-)
-
-target_include_directories(Hakkero PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/graphics/Vulkan
+  ${CMAKE_CURRENT_SOURCE_DIR}/core/vulkan
 )
 
 find_package(glfw3 3.4 REQUIRED)

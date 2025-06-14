@@ -57,10 +57,12 @@ public:
   static void init();
   static void shutdown();
   static void log(LogLevel level, const std::string &message);
+  static void registerCrashHandler();
 
 private:
   static void loggingThreadWorker();
   static void processBatch(const std::vector<LogMessage> &batch);
+  static void crashHandler(int signal);
 
   // Queue management
   static std::mutex queueMutex_;

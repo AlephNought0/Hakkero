@@ -1,8 +1,10 @@
 #include "logger.hpp"
-#include <time_utils.hpp>
+#include "time_utils.hpp"
 
+#include <csignal>
 #include <filesystem>
 #include <iostream>
+#include <stdexcept>
 
 // Static member initialization
 std::mutex Logger::queueMutex_;
@@ -59,12 +61,12 @@ void Logger::shutdown() {
   shutdownRequested_ = true;
   queueCV_.notify_all();
 
-  if (loggingThread_.joinable())
+  if (loggingThread_.joinable()) {
     loggingThread_.join();
+  }
 
-  // Final flush
-  std::lock_guard<std::mutex> fileLock(fileMutex_);
-  if (logFile_) {
+  std::unique_lock<std::mutex> fileLock(fileMutex_, std::try_to_lock);
+  if (fileLock && logFile_) {
     logFile_->flush();
     logFile_->close();
   }
@@ -76,6 +78,12 @@ void Logger::log(LogLevel level, const std::string &message) {
   if (!initialized_) {
     init();
   }
+
+  static std::once_flag init_flag;
+  std::call_once(init_flag, [] {
+    init();
+    registerCrashHandler();
+  });
 
   // Console output
   {
@@ -162,4 +170,31 @@ void Logger::processBatch(const std::vector<LogMessage> &batch) {
       })) {
     logFile_->flush();
   }
+}
+
+void Logger::registerCrashHandler() {
+  std::signal(SIGSEGV, crashHandler);        // Segmentation fault
+  std::signal(SIGABRT, crashHandler);        // Abort signal
+  std::signal(SIGTERM, crashHandler);        // Termination request
+  std::atexit([]() { Logger::shutdown(); }); // Normal exit
+}
+
+void Logger::crashHandler(int signal) {
+  const char *name = "";
+  switch (signal) {
+  case SIGSEGV:
+    name = "SIGSEGV";
+    break;
+  case SIGABRT:
+    name = "SIGABRT";
+    break;
+  case SIGTERM:
+    name = "SIGTERM";
+    break;
+  }
+
+  log(LogLevel::ERROR,
+      std::format("CRASH: Received signal {} ({})", signal, name));
+  shutdown();
+  std::_Exit(EXIT_FAILURE);
 }
