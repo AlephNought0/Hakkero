@@ -14,13 +14,14 @@ void createVkInstance(vulkan_context *context,
                       VkInstanceCreateInfo &createInfo) {
   if (context->instance) {
     LOG_FATAL("The vulkan instance already exists.");
+    throw std::runtime_error("The vulkan instance already exists.");
   }
 
   VkResult result = vkCreateInstance(&createInfo, nullptr, &context->instance);
   std::string message = vkResultToString(result);
   if (!checkVkResult(result)) {
     LOG_FATAL(message);
-    throw std::runtime_error("test");
+    throw std::runtime_error(message);
   }
 
   else {

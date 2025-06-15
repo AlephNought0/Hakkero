@@ -171,6 +171,7 @@ void Logger::registerCrashHandler() {
   std::signal(SIGSEGV, crashHandler);        // Segmentation fault
   std::signal(SIGABRT, crashHandler);        // Abort signal
   std::signal(SIGTERM, crashHandler);        // Termination request
+  std::signal(SIGINT, crashHandler);         // Program interruption
   std::atexit([]() { Logger::shutdown(); }); // Normal exit
 }
 
@@ -210,6 +211,9 @@ void Logger::crashHandler(int signal) {
   case SIGTERM:
     name = "SIGTERM";
     break;
+  case SIGINT:
+    name = "SIGINT"; // This isn't really a crash but oh well
+    break;
   }
 
   signalSafeWrite("\nCRASH: Signal ");
@@ -219,5 +223,5 @@ void Logger::crashHandler(int signal) {
   signalSafeWrite(")\n");
 
   shutdown();
-  _Exit(EXIT_FAILURE);
+  _Exit(signal == SIGINT ? EXIT_SUCCESS : EXIT_FAILURE);
 }
