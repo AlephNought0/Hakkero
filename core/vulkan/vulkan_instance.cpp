@@ -4,7 +4,6 @@
 #include "vulkan_utils.hpp"
 
 #include <GLFW/glfw3.h>
-#include <stdexcept>
 #include <string_view>
 #include <unordered_set>
 #include <vector>
@@ -13,15 +12,13 @@
 void createVkInstance(vulkan_context *context,
                       VkInstanceCreateInfo &createInfo) {
   if (context->instance) {
-    LOG_ERROR("The vulkan instance already exists.");
-    throw std::runtime_error("The vulkan instance already exists.");
+    LOG_FATAL("The vulkan instance already exists.");
   }
 
   VkResult result = vkCreateInstance(&createInfo, nullptr, &context->instance);
   std::string message = vkResultToString(result);
   if (!checkVkResult(result)) {
-    LOG_ERROR(message);
-    throw std::runtime_error(message);
+    LOG_FATAL(message);
   }
 
   else {

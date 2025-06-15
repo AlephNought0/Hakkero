@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <cstring>
 #include <fstream>
 #include <memory>
 #include <mutex>
@@ -9,7 +10,11 @@
 #include <string>
 #include <vector>
 
-enum class LogLevel { INFO, WARN, ERROR, DEBUG };
+namespace StderrWrite {
+void writeStderr(const char *msg) noexcept;
+} // namespace StderrWrite
+
+enum class LogLevel { INFO, WARN, ERROR, FATAL, DEBUG };
 
 constexpr std::string_view logLevelToString(LogLevel level) noexcept {
   switch (level) {
@@ -21,6 +26,8 @@ constexpr std::string_view logLevelToString(LogLevel level) noexcept {
     return "WARN";
   case LogLevel::ERROR:
     return "ERROR";
+  case LogLevel::FATAL:
+    return "FATAL";
   default:
     return "UNKNOWN";
   }
@@ -36,6 +43,8 @@ constexpr std::string_view logLevelToColor(LogLevel level) noexcept {
     return "\033[32m"; // Green
   case LogLevel::DEBUG:
     return "\033[36m"; // Cyan
+  case LogLevel::FATAL:
+    return "\033[31m"; // Red
   default:
     return "";
   }
@@ -44,6 +53,7 @@ constexpr std::string_view logLevelToColor(LogLevel level) noexcept {
 #define LOG_INFO(msg) Logger::log(LogLevel::INFO, msg)
 #define LOG_WARN(msg) Logger::log(LogLevel::WARN, msg)
 #define LOG_ERROR(msg) Logger::log(LogLevel::ERROR, msg)
+#define LOG_FATAL(msg) Logger::log(LogLevel::FATAL, msg)
 #define LOG_DEBUG(msg) Logger::log(LogLevel::DEBUG, msg)
 
 class Logger {
@@ -54,7 +64,6 @@ public:
     std::string timestamp;
   };
 
-  static void init();
   static void shutdown();
   static void log(LogLevel level, const std::string &message);
   static void registerCrashHandler();
@@ -63,6 +72,7 @@ private:
   static void loggingThreadWorker();
   static void processBatch(const std::vector<LogMessage> &batch);
   static void crashHandler(int signal);
+  static void init();
 
   // Queue management
   static std::mutex queueMutex_;
