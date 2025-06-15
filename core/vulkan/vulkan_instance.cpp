@@ -4,6 +4,7 @@
 #include "vulkan_utils.hpp"
 
 #include <GLFW/glfw3.h>
+#include <stdexcept>
 #include <string_view>
 #include <unordered_set>
 #include <vector>
@@ -19,6 +20,7 @@ void createVkInstance(vulkan_context *context,
   std::string message = vkResultToString(result);
   if (!checkVkResult(result)) {
     LOG_FATAL(message);
+    throw std::runtime_error("test");
   }
 
   else {

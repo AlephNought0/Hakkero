@@ -2,7 +2,6 @@
 #include "time_utils.hpp"
 
 #include <csignal>
-#include <cstring>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -19,36 +18,16 @@ std::unique_ptr<std::ofstream> Logger::logFile_;
 
 std::mutex Logger::consoleMutex_;
 std::thread Logger::loggingThread_;
+std::atomic<bool> Logger::initialized_{false};
 
 constexpr size_t Logger::MAX_BATCH_SIZE;
 constexpr size_t Logger::MAX_QUEUE_SIZE;
 
-// Abomination that works
-namespace {
-void signalSafeWrite(const char *msg) noexcept {
-  while (true) {
-    ssize_t ret = write(STDERR_FILENO, msg, strlen(msg));
-    if (ret == -1 && errno == EINTR)
-      continue; // Retry if interrupted
-    break;
-  }
-}
-
-void signalSafeWrite(int num) noexcept {
-  char buffer[16];
-  char *ptr = buffer + sizeof(buffer) - 1;
-  *ptr = '\0';
-
-  do {
-    *--ptr = '0' + (num % 10);
-    num /= 10;
-  } while (num > 0);
-
-  signalSafeWrite(ptr);
-}
-} // namespace
-
 void Logger::init() {
+  if (initialized_.exchange(true)) {
+    return;
+  }
+
   auto timeObj = TimeUtils::captureCurrentTime();
   std::string date = TimeUtils::formatAsDate(timeObj);
 
@@ -76,6 +55,9 @@ void Logger::init() {
 }
 
 void Logger::shutdown() {
+  if (!initialized_)
+    return;
+
   shutdownRequested_ = true;
   queueCV_.notify_all();
 
@@ -88,29 +70,23 @@ void Logger::shutdown() {
     logFile_->flush();
     logFile_->close();
   }
+
+  initialized_ = false;
 }
 
 void Logger::log(LogLevel level, const std::string &message) {
-  static std::once_flag init_flag;
-  std::call_once(init_flag, [] {
+  if (!initialized_) {
     init();
     registerCrashHandler();
-  });
+  }
 
   // Console output
   {
     std::lock_guard<std::mutex> consoleLock(consoleMutex_);
-    if (level <= LogLevel::ERROR) {
+    if (level <= LogLevel::FATAL) {
       std::cerr << logLevelToColor(level) << "[" << logLevelToString(level)
                 << "]"
                 << "\033[0m: " << message << '\n';
-    }
-
-    else if (level == LogLevel::FATAL) {
-      std::cerr << logLevelToColor(level) << "[" << logLevelToString(level)
-                << "]"
-                << "\033[0m: " << message << '\n';
-      throw std::runtime_error(message);
     }
   }
 
@@ -183,7 +159,7 @@ void Logger::processBatch(const std::vector<LogMessage> &batch) {
               << "]: " << msg.message << "\n";
   }
 
-  // Flush if there are any messages with log level equal and above ERROR
+  // Flush if there are any error messages
   if (std::any_of(batch.begin(), batch.end(), [](const LogMessage &msg) {
         return msg.level >= LogLevel::ERROR;
       })) {
@@ -197,6 +173,30 @@ void Logger::registerCrashHandler() {
   std::signal(SIGTERM, crashHandler);        // Termination request
   std::atexit([]() { Logger::shutdown(); }); // Normal exit
 }
+
+namespace {
+void signalSafeWrite(const char *msg) noexcept {
+  while (true) {
+    ssize_t ret = write(STDERR_FILENO, msg, strlen(msg));
+    if (ret == -1 && errno == EINTR)
+      continue; // Retry if interrupted
+    break;
+  }
+}
+
+void signalSafeWrite(int num) noexcept {
+  char buffer[16];
+  char *ptr = buffer + sizeof(buffer) - 1;
+  *ptr = '\0';
+
+  do {
+    *--ptr = '0' + (num % 10);
+    num /= 10;
+  } while (num > 0);
+
+  signalSafeWrite(ptr);
+}
+} // namespace
 
 void Logger::crashHandler(int signal) {
   const char *name = "";
@@ -218,5 +218,6 @@ void Logger::crashHandler(int signal) {
   signalSafeWrite(name);
   signalSafeWrite(")\n");
 
+  shutdown();
   _Exit(EXIT_FAILURE);
 }

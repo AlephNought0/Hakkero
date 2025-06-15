@@ -25,15 +25,13 @@ int main() {
   appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
   appInfo.pApplicationName = "Hakkero Engine";
 
-  // auto extensionNames = getInstanceExtensions();
-
-  const char *extensionNames = "EAE";
+  auto extensionNames = getInstanceExtensions();
 
   VkInstanceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   createInfo.pApplicationInfo = &appInfo;
-  createInfo.ppEnabledExtensionNames = &extensionNames;
-  createInfo.enabledExtensionCount = 1;
+  createInfo.ppEnabledExtensionNames = extensionNames.data();
+  createInfo.enabledExtensionCount = extensionNames.size();
 
   GLFWwindow *window =
       glfwCreateWindow(800, 800, appInfo.pApplicationName, nullptr, nullptr);
