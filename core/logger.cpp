@@ -159,7 +159,7 @@ void Logger::processBatch(const std::vector<LogMessage> &batch) {
               << "]: " << msg.message << "\n";
   }
 
-  // Flush if there are any error messages
+  // Flush if there are any messages equal to and above ERROR log level
   if (std::any_of(batch.begin(), batch.end(), [](const LogMessage &msg) {
         return msg.level >= LogLevel::ERROR;
       })) {
@@ -168,11 +168,11 @@ void Logger::processBatch(const std::vector<LogMessage> &batch) {
 }
 
 void Logger::registerCrashHandler() {
-  std::signal(SIGSEGV, crashHandler);        // Segmentation fault
-  std::signal(SIGABRT, crashHandler);        // Abort signal
-  std::signal(SIGTERM, crashHandler);        // Termination request
-  std::signal(SIGINT, crashHandler);         // Program interruption
-  std::atexit([]() { Logger::shutdown(); }); // Normal exit
+  std::signal(SIGSEGV, crashHandler); // Segmentation fault
+  std::signal(SIGABRT, crashHandler); // Abort signal
+  std::signal(SIGTERM, crashHandler); // Termination request
+  std::signal(SIGINT, crashHandler);  // Program interruption
+  std::atexit([]() { shutdown(); });  // Normal exit
 }
 
 namespace {

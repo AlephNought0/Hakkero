@@ -11,6 +11,8 @@ add_library(Hakkero SHARED
     core/time_utils.cpp
     core/vulkan/vulkan_instance.cpp
     core/vulkan/vulkan_utils.cpp
+    core/vulkan/vulkan_device.cpp
+    core/vulkan/vulkan_types.cpp
 )
 
 include(GenerateExportHeader)
