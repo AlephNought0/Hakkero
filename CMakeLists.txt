@@ -13,6 +13,7 @@ add_library(Hakkero SHARED
     core/vulkan/vulkan_utils.cpp
     core/vulkan/vulkan_device.cpp
     core/vulkan/vulkan_types.cpp
+    core/vulkan/vulkan_surface.cpp
 )
 
 include(GenerateExportHeader)

@@ -6,6 +6,8 @@
 
 static vulkan_context s_context;
 static vulkan_device s_device;
+static vulkan_swapchain s_swapchain;
+static window_backend s_window;
 static bool initialized = false;
 
 void checkInit() {
@@ -21,6 +23,8 @@ void initializeVkStructs() {
   initialized = true;
   s_context = vulkan_context{};
   s_device = vulkan_device{};
+  s_swapchain = vulkan_swapchain{};
+  s_window = window_backend{};
 }
 
 vulkan_context &getVulkanContextStruct() {
@@ -33,4 +37,16 @@ vulkan_device &getVulkanDeviceStruct() {
   checkInit();
 
   return s_device;
+}
+
+vulkan_swapchain &getVulkanSwapchainStruct() {
+  checkInit();
+
+  return s_swapchain;
+}
+
+window_backend &getWindowBackendStruct() {
+  checkInit();
+
+  return s_window;
 }

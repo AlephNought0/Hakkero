@@ -31,9 +31,8 @@ void createVkInstance(VkInstanceCreateInfo &createInfo) {
   }
 }
 
-std::vector<const char *>
-getInstanceExtensions(std::initializer_list<std::string_view> optional) {
-
+void getInstanceExtensions(std::initializer_list<std::string_view> optional) {
+  vulkan_device &vkDeviceStruct = getVulkanDeviceStruct();
   uint32_t glfwCount = 0;
   const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwCount);
 
@@ -68,5 +67,5 @@ getInstanceExtensions(std::initializer_list<std::string_view> optional) {
     extensions.push_back(ext.c_str());
   }
 
-  return extensions;
+  vkDeviceStruct.deviceExtensions = extensions;
 }
