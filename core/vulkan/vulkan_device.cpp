@@ -29,17 +29,20 @@ bool checkDeviceExtensionSupport(VkPhysicalDevice vkPhysDevice) {
   return requiredExtensions.empty();
 }
 
-bool VulkanDevice::isSuitable(VkPhysicalDevice vkPhysDevice) {
+bool isSuitable(VkPhysicalDevice vkPhysDevice) {
   VkPhysicalDeviceProperties deviceProperties;
   VkPhysicalDeviceFeatures deviceFeatures;
   vkGetPhysicalDeviceProperties(vkPhysDevice, &deviceProperties);
   vkGetPhysicalDeviceFeatures(vkPhysDevice, &deviceFeatures);
 
+  // I wonder if copying the VkPhysicalDevice twice is a smart choice
+  bool extensionsSupported = checkDeviceExtensionSupport(vkPhysDevice);
+
   return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-         deviceFeatures.geometryShader;
+         deviceFeatures.geometryShader && extensionsSupported;
 }
 
-void VulkanDevice::getDevice() {
+void getDevice() {
   vulkan_context &context = getVulkanContextStruct();
   vulkan_device &vkDeviceStruct = getVulkanDeviceStruct();
   uint32_t deviceCount = 0;
@@ -74,7 +77,7 @@ void VulkanDevice::getDevice() {
   }
 }
 
-void VulkanDevice::createLogicalDevice() {
+void createLogicalDevice() {
   vulkan_device &vkDeviceStruct = getVulkanDeviceStruct();
 
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -92,9 +95,6 @@ void VulkanDevice::createLogicalDevice() {
     queueCreateInfos.push_back(queueCreateInfo);
   }
 
-  const std::vector<const char *> deviceExtensions = {
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-
   VkDeviceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
   createInfo.pQueueCreateInfos = queueCreateInfos.data();
@@ -102,16 +102,16 @@ void VulkanDevice::createLogicalDevice() {
       static_cast<uint32_t>(queueCreateInfos.size());
 
   createInfo.enabledExtensionCount =
-      static_cast<uint32_t>(deviceExtensions.size());
-  createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+      static_cast<uint32_t>(vkDeviceStruct.deviceExtensions.size());
+  createInfo.ppEnabledExtensionNames = vkDeviceStruct.deviceExtensions.data();
 
   VkResult result = vkCreateDevice(vkDeviceStruct.vkPhysDevice, &createInfo,
-                                   nullptr, &vkDeviceStruct.logical_device);
+                                   nullptr, &vkDeviceStruct.logicalDevice);
 
-  vkGetDeviceQueue(vkDeviceStruct.logical_device,
+  vkGetDeviceQueue(vkDeviceStruct.logicalDevice,
                    vkDeviceStruct.graphics_queue_index.value(), 0,
                    &vkDeviceStruct.graphicsQueue);
-  vkGetDeviceQueue(vkDeviceStruct.logical_device,
+  vkGetDeviceQueue(vkDeviceStruct.logicalDevice,
                    vkDeviceStruct.present_queue_index.value(), 0,
                    &vkDeviceStruct.presentQueue);
 
@@ -125,7 +125,7 @@ void VulkanDevice::createLogicalDevice() {
   }
 }
 
-void VulkanDevice::findQueueFamilies() {
+void findQueueFamilies() {
   uint32_t queueFamilyCount = 0;
   vulkan_device &vkDeviceStruct = getVulkanDeviceStruct();
   window_backend &vkWindowBackend = getWindowBackendStruct();
@@ -153,6 +153,7 @@ void VulkanDevice::findQueueFamilies() {
       if (vkDeviceStruct.graphics_queue_index.has_value() &&
           vkDeviceStruct.present_queue_index.has_value()) {
         LOG_INFO("Found a graphics queue family for the physical device.");
+        LOG_INFO("Found a present queue family for the physical device.");
         break;
       }
     }
@@ -161,5 +162,10 @@ void VulkanDevice::findQueueFamilies() {
   if (!vkDeviceStruct.graphics_queue_index.has_value()) {
     LOG_ERROR("Could not find a graphics queue family.");
     throw std::runtime_error("Could not find a graphics queue family.");
+  }
+
+  if (!vkDeviceStruct.graphics_queue_index.has_value()) {
+    LOG_ERROR("Could not find a present queue family.");
+    throw std::runtime_error("Could not find a present queue family.");
   }
 }

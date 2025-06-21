@@ -7,6 +7,8 @@
 static vulkan_context s_context;
 static vulkan_device s_device;
 static vulkan_swapchain s_swapchain;
+static vulkan_swapchain_support_info s_swapchainSupport;
+static vulkan_image s_image;
 static window_backend s_window;
 static bool initialized = false;
 
@@ -43,6 +45,18 @@ vulkan_swapchain &getVulkanSwapchainStruct() {
   checkInit();
 
   return s_swapchain;
+}
+
+vulkan_swapchain_support_info &getVulkanSwapchainSupportStruct() {
+  checkInit();
+
+  return s_swapchainSupport;
+}
+
+vulkan_image &getVulkanImageStruct() {
+  checkInit();
+
+  return s_image;
 }
 
 window_backend &getWindowBackendStruct() {

@@ -32,7 +32,7 @@ void createVkInstance(VkInstanceCreateInfo &createInfo) {
 }
 
 void getInstanceExtensions(std::initializer_list<std::string_view> optional) {
-  vulkan_device &vkDeviceStruct = getVulkanDeviceStruct();
+  vulkan_context &context = getVulkanContextStruct();
   uint32_t glfwCount = 0;
   const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwCount);
 
@@ -67,5 +67,5 @@ void getInstanceExtensions(std::initializer_list<std::string_view> optional) {
     extensions.push_back(ext.c_str());
   }
 
-  vkDeviceStruct.deviceExtensions = extensions;
+  context.instanceExtensions = extensions;
 }

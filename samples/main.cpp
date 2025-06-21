@@ -1,8 +1,11 @@
+#include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <core/vulkan/vulkan_device.hpp>
+#include <core/vulkan/vulkan_image.hpp>
 #include <core/vulkan/vulkan_instance.hpp>
 #include <core/vulkan/vulkan_surface.hpp>
+#include <core/vulkan/vulkan_swapchain.hpp>
 #include <core/vulkan/vulkan_types.hpp>
 #include <core/vulkan/vulkan_utils.hpp>
 #include <cstring>
@@ -21,10 +24,11 @@ int main() {
   // turns out to be amazing I guess lol).
 
   initializeVkStructs();
+  vulkan_context &context = getVulkanContextStruct();
   vulkan_device &vkDeviceStruct = getVulkanDeviceStruct();
 
   if (!glfwInit()) {
-    throw std::runtime_error("Failed to initialize GLFW");
+    throw std::runtime_error("Failed to initialize GLFW.");
   }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -39,17 +43,29 @@ int main() {
   VkInstanceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   createInfo.pApplicationInfo = &appInfo;
-  createInfo.ppEnabledExtensionNames = vkDeviceStruct.deviceExtensions.data();
-  createInfo.enabledExtensionCount = vkDeviceStruct.deviceExtensions.size();
+  createInfo.ppEnabledExtensionNames = context.instanceExtensions.data();
+  createInfo.enabledExtensionCount = context.instanceExtensions.size();
 
   GLFWwindow *window =
       glfwCreateWindow(800, 800, appInfo.pApplicationName, nullptr, nullptr);
 
+  /* I'd recommend setting some deviceExtensions like this from my current
+   * knowledge. Of course some would be better of hardcoded like the swapchain
+   * extension but I'll figure that one later.
+   */
+  vkDeviceStruct.deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
   createVkInstance(createInfo);
-  createVkSurface(window);
-  VulkanDevice::getDevice();
-  VulkanDevice::findQueueFamilies();
-  VulkanDevice::createLogicalDevice();
+  createVkSurface(window); // This must be called BEFORE getting devices!!!
+  getDevice();
+  findQueueFamilies();
+  createLogicalDevice();
+  querySwapchainSupport();
+  chooseSwapSurfaceFormat();
+  chooseSwapPresentMode();
+  chooseSwapExtent(window);
+  createSwapchain();
+  createImageViews();
 
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();

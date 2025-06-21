@@ -11,23 +11,45 @@ struct window_backend {
   VkSurfaceKHR surface = VK_NULL_HANDLE;
 };
 
-struct vulkan_swapchain {
+struct vulkan_image {
+  /// @brief Handles of the internal image objects.
+  std::vector<VkImage> swapChainImages;
+
+  /// @brief Handles of the internal image view objects.
+  std::vector<VkImageView> swapChainImageViews;
+};
+
+struct vulkan_swapchain_support_info {
   /// @brief Structure describing capabilities of a surface.
   VkSurfaceCapabilitiesKHR capabilities;
 
-  /// @brief The swapchain handle.
-  VkSwapchainKHR swapchain;
-
-  /// @brief Swapchain image formats.
+  /// @brief Supported surface formats for the surface.
   std::vector<VkSurfaceFormatKHR> formats;
 
-  /// @brief  Presentation modes supported for a surface.
+  /// @brief Supported presentation modes for the surface.
   std::vector<VkPresentModeKHR> presentModes;
+};
+
+struct vulkan_swapchain {
+  /// @brief The swapchain handle.
+  VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+
+  /// @brief The swapchain image format.
+  VkSurfaceFormatKHR format;
+
+  /// @brief The swapchain presentation mode.
+  VkPresentModeKHR presentMode;
+
+  /// @brief The resolution of swap images.
+  VkExtent2D extent;
 };
 
 struct vulkan_context {
   /// @brief The handle to the vulkan instance.
   VkInstance instance = VK_NULL_HANDLE;
+
+  /// @brief Required instance extensions.
+  std::vector<const char *> instanceExtensions;
 };
 
 struct vulkan_device {
@@ -36,10 +58,13 @@ struct vulkan_device {
 
   /// @brief This is the logical device. It is used for most of the vulkan.
   /// operations.
-  VkDevice logical_device = VK_NULL_HANDLE;
+  VkDevice logicalDevice = VK_NULL_HANDLE;
 
   /// @brief Features of the physical device.
   VkPhysicalDeviceFeatures deviceFeatures;
+
+  /// @brief Required device extensions.
+  std::vector<const char *> deviceExtensions;
 
   /// @brief A graphics queue index.
   std::optional<uint32_t> graphics_queue_index;
@@ -52,15 +77,14 @@ struct vulkan_device {
 
   /// @brief A handle to the present queue.
   VkQueue presentQueue = VK_NULL_HANDLE;
-
-  /// @bried Required device extensions.
-  std::vector<const char *> deviceExtensions;
 };
 
 void initializeVkStructs();
 vulkan_context &getVulkanContextStruct();
 vulkan_device &getVulkanDeviceStruct();
 vulkan_swapchain &getVulkanSwapchainStruct();
+vulkan_swapchain_support_info &getVulkanSwapchainSupportStruct();
+vulkan_image &getVulkanImageStruct();
 window_backend &getWindowBackendStruct();
 
 #endif
