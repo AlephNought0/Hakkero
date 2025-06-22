@@ -119,7 +119,7 @@ void chooseSwapExtent(GLFWwindow *window) {
 
     vkSwapchain.extent = actualExtent;
 
-    LOG_INFO("Chosen the swapchain 2D image extent");
+    LOG_INFO("Chosen the swapchain 2D image extent.");
   }
 }
 

@@ -9,7 +9,11 @@ static vulkan_device s_device;
 static vulkan_swapchain s_swapchain;
 static vulkan_swapchain_support_info s_swapchainSupport;
 static vulkan_image s_image;
+static vulkan_shader s_shader;
+static vulkan_pipeline s_pipeline;
+static vulkan_command_buffer s_command_buffer;
 static window_backend s_window;
+
 static bool initialized = false;
 
 void checkInit() {
@@ -57,6 +61,24 @@ vulkan_image &getVulkanImageStruct() {
   checkInit();
 
   return s_image;
+}
+
+vulkan_shader &getVulkanShaderStruct() {
+  checkInit();
+
+  return s_shader;
+}
+
+vulkan_pipeline &getVulkanPipelineStruct() {
+  checkInit();
+
+  return s_pipeline;
+}
+
+vulkan_command_buffer &getVulkanCommandBufferStruct() {
+  checkInit();
+
+  return s_command_buffer;
 }
 
 window_backend &getWindowBackendStruct() {

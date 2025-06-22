@@ -1,15 +1,12 @@
+#include "vulkan_render.hpp"
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <core/vulkan/vulkan_device.hpp>
-#include <core/vulkan/vulkan_image.hpp>
-#include <core/vulkan/vulkan_instance.hpp>
-#include <core/vulkan/vulkan_surface.hpp>
-#include <core/vulkan/vulkan_swapchain.hpp>
-#include <core/vulkan/vulkan_types.hpp>
-#include <core/vulkan/vulkan_utils.hpp>
 #include <cstring>
 #include <stdexcept>
+#include <vulkan_init.hpp>
+#include <vulkan_instance.hpp>
+#include <vulkan_types.hpp>
 
 int main() {
   // TODO: Learn how to commit a buffer to the window so wayland can show it.
@@ -32,7 +29,7 @@ int main() {
   }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
   VkApplicationInfo appInfo{};
   appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -55,19 +52,10 @@ int main() {
    */
   vkDeviceStruct.deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-  createVkInstance(createInfo);
-  createVkSurface(window); // This must be called BEFORE getting devices!!!
-  getDevice();
-  findQueueFamilies();
-  createLogicalDevice();
-  querySwapchainSupport();
-  chooseSwapSurfaceFormat();
-  chooseSwapPresentMode();
-  chooseSwapExtent(window);
-  createSwapchain();
-  createImageViews();
+  vkInitialize(window, createInfo);
 
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
+    drawFrame();
   }
 }

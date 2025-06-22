@@ -16,6 +16,10 @@ add_library(Hakkero SHARED # There has to be a better way to do this. Check on i
     core/vulkan/vulkan_surface.cpp
     core/vulkan/vulkan_swapchain.cpp
     core/vulkan/vulkan_image.cpp
+    core/vulkan/vulkan_init.cpp
+    core/vulkan/vulkan_pipeline.cpp
+    core/vulkan/vulkan_command_buffer.cpp
+    core/vulkan/vulkan_render.cpp
 )
 
 include(GenerateExportHeader)
