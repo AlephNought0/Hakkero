@@ -1,5 +1,5 @@
 #include <vulkan/vulkan_core.h>
-#include <vulkan_render.hpp>
+#include <vulkan/vulkan_render.hpp>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <cstring>
@@ -46,7 +46,7 @@ int main() {
   GLFWwindow *window =
       glfwCreateWindow(800, 800, appInfo.pApplicationName, nullptr, nullptr);
 
-  /* I'd recommend setting some deviceExtensions like this from my current
+  /*NOTE: I'd recommend setting some deviceExtensions like this from my current
    * knowledge. Of course some would be better of hardcoded like the swapchain
    * extension but I'll figure that one later.
    */
