@@ -38,8 +38,7 @@ bool isSuitable(VkPhysicalDevice vkPhysDevice) {
   // I wonder if copying the VkPhysicalDevice twice is a smart choice
   bool extensionsSupported = checkDeviceExtensionSupport(vkPhysDevice);
 
-  return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-         deviceFeatures.geometryShader && extensionsSupported;
+  return deviceFeatures.geometryShader && extensionsSupported;
 }
 
 void getDevice() {
