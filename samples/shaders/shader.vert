@@ -2,8 +2,10 @@
 
 layout(location = 0) out vec3 fragColor;
 
-vec2 positions[3] = vec2[]( // It seems like that putting positions directly in the shader file
-    vec2(0.0, -0.5),        // isn't a good practice. I'll leave it be for learning for now.
+vec2 positions[3] = vec2[]( 
+    // NOTE: It seems like that putting positions directly in the shader file
+    // isn't a good practice. I'll leave it be for learning for now.
+    vec2(0.0, -0.5),
     vec2(0.5, 0.5),
     vec2(-0.5, 0.5)
 );
