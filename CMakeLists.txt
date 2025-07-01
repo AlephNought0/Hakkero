@@ -75,12 +75,26 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hakkero.pc
 )
 
 if(BUILD_SAMPLES)
-  if(TARGET Hakkero AND glfw3_FOUND AND Vulkan_FOUND) 
-    add_subdirectory(samples)
-  else()
-    message(WARNING "Samples skipped - missing dependencies")
-    message(STATUS "Hakkero target exists: ${TARGET Hakkero}")
-    message(STATUS "GLFW found: ${glfw3_FOUND}")
-    message(STATUS "Vulkan found: ${Vulkan_FOUND}")
-  endif()
+    if(TARGET Hakkero AND glfw3_FOUND AND Vulkan_FOUND)
+        # Enable shader compilation
+        find_program(GLSLC_EXECUTABLE NAMES glslc HINTS Vulkan::glslc)
+        
+        # Find all sample directories
+        file(GLOB sample_dirs LIST_DIRECTORIES true RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/samples" "${CMAKE_CURRENT_SOURCE_DIR}/samples/*")
+        
+        foreach(sample_dir ${sample_dirs})
+            if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/samples/${sample_dir}")
+                # Check if the directory has a CMakeLists.txt
+                if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/samples/${sample_dir}/CMakeLists.txt")
+                    message(STATUS "Adding sample: ${sample_dir}")
+                    add_subdirectory(samples/${sample_dir})
+                endif()
+            endif()
+        endforeach()
+    else()
+        message(WARNING "Samples skipped - missing dependencies")
+        message(STATUS "Hakkero target exists: ${TARGET Hakkero}")
+        message(STATUS "GLFW found: ${glfw3_FOUND}")
+        message(STATUS "Vulkan found: ${Vulkan_FOUND}")
+    endif()
 endif()
