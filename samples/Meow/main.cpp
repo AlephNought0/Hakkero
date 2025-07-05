@@ -1,3 +1,4 @@
+#include <sys/types.h>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_render.hpp>
 #define GLFW_INCLUDE_VULKAN
@@ -43,8 +44,11 @@ int main() {
   createInfo.ppEnabledExtensionNames = context.instanceExtensions.data();
   createInfo.enabledExtensionCount = context.instanceExtensions.size();
 
+  constexpr u_int32_t WIDTH = 800;
+  constexpr u_int32_t HEIGHT = 800;
+
   GLFWwindow *window =
-      glfwCreateWindow(800, 800, appInfo.pApplicationName, nullptr, nullptr);
+      glfwCreateWindow(WIDTH, HEIGHT, appInfo.pApplicationName, nullptr, nullptr);
 
   /*NOTE: I'd recommend setting some deviceExtensions like this from my current
    * knowledge. Of course some would be better of hardcoded like the swapchain

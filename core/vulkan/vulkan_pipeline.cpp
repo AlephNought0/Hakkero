@@ -119,8 +119,8 @@ void createGraphicsPipeline() {
   // vulkan_swapchain &vkSwapchain = getVulkanSwapchainStruct();
   vulkan_pipeline &vkPipeline = getVulkanPipelineStruct();
 
-  auto vertShaderCode = readFile("../../samples/shaders/vert.spv");
-  auto fragShaderCode = readFile("../../samples/shaders/frag.spv");
+  auto vertShaderCode = readFile("../../../samples/shaders/vert.spv");
+  auto fragShaderCode = readFile("../../../samples/shaders/frag.spv");
 
   VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
   VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);

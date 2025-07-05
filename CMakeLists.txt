@@ -6,7 +6,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(Hakkero SHARED # There has to be a better way to do this. Check on it later.
+add_library(Hakkero SHARED 
+    # NOTE: There has to be a better way to do this. Check on it later.
     core/logger.cpp
     core/time_utils.cpp
     core/vulkan/vulkan_instance.cpp
